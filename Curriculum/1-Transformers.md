@@ -20,10 +20,10 @@ The transformer is an important neural network architecture used for language mo
 Implement a decoder-only transformer language model.
 
 - Here are some first principle questions to answer:
-    - What is different architecturally from the Transformer, vs a normal RNN, like an LSTM? (Specifically, how are recurrence and time managed?) <span style= "color:blue">Transformers ingest context all at one go, with time represented by positional encoding (sinusoidal); recurrence is managed by feeding output into the decoder. LSTM processes input and output one step at a time and feeds the output as an input into the next step; time is naturally managed due to sequential processing. </span>
-    - Attention is defined as, Attention(Q,K,V) = softmax(QK^T/sqrt(d_k))V. What are the dimensions for Q, K, and V? Why do we use this setup? What other combinations could we do with (Q,K) that also output weights?
-    - Are the dense layers different at each multi-head attention block? Why or why not? 
-    - Why do we have so many skip connections, especially connecting the input of an attention function to the output? Intuitively, what if we didn't? 
+    - What is different architecturally from the Transformer, vs a normal RNN, like an LSTM? (Specifically, how are recurrence and time managed?) <span style= "color:yellow">Transformers ingest context all at one go, with time represented by positional encoding (sinusoidal); recurrence is managed by feeding output into the decoder. LSTM processes input and output one step at a time and feeds the output as an input into the next step; time is naturally managed due to sequential processing. </span>
+    - Attention is defined as, Attention(Q,K,V) = softmax(QK^T/sqrt(d_k))V. What are the dimensions for Q, K, and V? Why do we use this setup? What other combinations could we do with (Q,K) that also output weights? <span style= "color:yellow"> They are tensors of dimension $d \times h \times L$ where $d$ is a chosen variable, $h$ is the number of heads and $L$ is the number of particles in the input vector. </span> <span style= "color:red"> We can change the value of $d$ and also set $d_V \neq d_q$ as needed</span>
+    - Are the dense layers different at each multi-head attention block? Why or why not? <span style= "color:red">Same structure, different weights, trained to capture different information</span>
+    - Why do we have so many skip connections, especially connecting the input of an attention function to the output? Intuitively, what if we didn't? <span style= "color:yellow">To avoid vanishing gradient </span>
 - Now we'll actually implement the code. Make sure each of these is completely correct - it's very easy to get the small details wrong.
     - Implement the positional embedding function first. 
     - Then implement the function which calculates attention, given (Q,K,V) as arguments. 

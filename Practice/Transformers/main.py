@@ -109,6 +109,7 @@ if __name__ == '__main__':
     argparse.add_argument('--data', type=str, default= None)
     argparse.add_argument('--device', type=str, default='cuda')
     argparse.add_argument('--logdir', type=str, default='logs')
+    argparse.add_argument('--load_model', type=str, default=None)
 
     args = argparse.parse_args()
     
@@ -211,23 +212,30 @@ if __name__ == '__main__':
     model = DecoderModel(vocab_size, channel_size, block_length, n_head, dropout, n_layers)
     optimizer = optim.Adam(model.parameters(), lr=learning_rate)
 
-    # train model
-    print(f"Training on {n_epochs} epochs...")
-    for i in range(n_epochs):
+    # load model if specified, else train model
+    if args.load_model is not None:
 
-        train_loss = train(model, optimizer, train_x, train_y, batch_size)
-        logits, test_loss = evaluate(model, test_x, test_y)
-        output = decode_vocab(decode_logits(logits, lookback_block_size=output_lookback), decoder)
-        sample = pd.concat(
-                [pd.DataFrame(decode_vocab(test_x, decoder)), 
-                    pd.DataFrame(decode_vocab(test_y, decoder)), 
-                    pd.DataFrame(output)], 
-            axis=1).sample(5)
+        print(f"Loading model from {args.load_model}...")
+        model.load_state_dict(torch.load(args.load_model))
 
-        print(f"Epoch {i} | Training Loss: {train_loss:.3f} | Test Loss: {test_loss:.3f} with sample output: \n {sample}")
+    else:
 
-    # save model
-    print("Complete. Saving model...")
-    model_file = input("Enter the model file to save (hit enter to cancel): ")
-    if model_file != "":
-        torch.save(model.state_dict(), model_file)
+        print(f"Training on {n_epochs} epochs...")
+        for i in range(n_epochs):
+
+            train_loss = train(model, optimizer, train_x, train_y, batch_size)
+            logits, test_loss = evaluate(model, test_x, test_y)
+            output = decode_vocab(decode_logits(logits, lookback_block_size=output_lookback), decoder)
+            sample = pd.concat(
+                    [pd.DataFrame(decode_vocab(test_x, decoder)), 
+                        pd.DataFrame(decode_vocab(test_y, decoder)), 
+                        pd.DataFrame(output)], 
+                axis=1).sample(5)
+
+            print(f"Epoch {i} | Training Loss: {train_loss:.3f} | Test Loss: {test_loss:.3f} with sample output: \n {sample}")
+
+        # save model
+        print("Complete. Saving model...")
+        model_file = input("Enter the model file to save (hit enter to cancel): ")
+        if model_file != "":
+            torch.save(model.state_dict(), model_file)

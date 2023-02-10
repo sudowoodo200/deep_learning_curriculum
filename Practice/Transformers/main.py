@@ -7,8 +7,7 @@ import pandas as pd, os, json, requests as req, string, numpy as np, argparse
 from torch.utils.tensorboard import SummaryWriter
 from tqdm import tqdm
 
-from data_util import *
-from train_util import *
+from utils import *
 from attention import *
 
 

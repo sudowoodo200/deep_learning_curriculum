@@ -2,3 +2,8 @@ torch
 tensorboard
 torchvision
 tqdm
+pandas
+matplotlib
+scikit-learn
+scipy
+numpy

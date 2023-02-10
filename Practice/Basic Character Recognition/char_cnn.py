@@ -15,5 +15,8 @@ import tensorboard
 from tensorboard import SummaryWriter
 import tqdm
 
-from data_util import *
+from utils import *
 
+class CNN(nn.Module):
+
+    

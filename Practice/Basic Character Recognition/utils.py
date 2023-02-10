@@ -20,14 +20,14 @@ class MNISTData:
             self.transform = transform
 
         if data is None:
-            self.train_data = datasets.MNIST(root='MNIST_data/', download=True, train=True, transform=transform)
-            self.val_data = datasets.MNIST(root='MNIST_data/', download=True, train=False, transform=transform)
+            self.train_data = datasets.MNIST(root='MNIST_data/', download=True, train=True, transform=self.transform)
+            self.val_data = datasets.MNIST(root='MNIST_data/', download=True, train=False, transform=self.transform)
         else:
             raise NotImplementedError
         
         self.n_train = len(self.train_data)
         self.n_val = len(self.val_data)
-        self.input_size = self.train_data[0][0].shape
+        self.input_dim = self.train_data[0][0].size
 
     def get_dataloader(self, train = True, batch_size = 32, shuffle = True):
         data = self.train_data if train else self.val_data
@@ -40,7 +40,6 @@ if __name__ == '__main__':
 
     # Load data
     data = MNISTData()
-    breakpoint()
 
     # Get dataloader
     train_loader = data.get_dataloader(train = True, batch_size = 32, shuffle = True)

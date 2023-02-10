@@ -2,22 +2,23 @@ import torch
 import pandas as pd
 import numpy as np
 from sklearn.model_selection import train_test_split
-import os, json, requests as req, string
+import os, json, requests as req, string, re
 import argparse
+from tqdm import tqdm
 
-class CharacterReversalDatagen:
+class CharacterReversalData:
     
-    def __init__(self, n, length=10, characters = string.ascii_letters + string.digits):
-        self.n = n
-        self.length = length
+    def __init__(self, max_length = 10, min_length = 10, characters = string.digits):
+        self.max_length = max_length
+        self.min_length = min_length
         self.characters = ['\0'] + list(characters)
-        self.vocab_size = len(characters)
+        self.vocab_size = len(characters) + 1
     
-    def gen(self, filename = None):
+    def gen(self, N:int = 1e4, filename = None):
 
         output = []
-        for i in range(self.n):
-            length = np.random.randint(1, self.length)
+        for i in range(int(N)):
+            length = np.random.randint(self.min_length, self.max_length+1)
             x = np.random.choice(list(self.characters[1:]), length)
             y = x[::-1]
             output.append({'x': x, 'y': y})
@@ -25,23 +26,25 @@ class CharacterReversalDatagen:
         df = pd.DataFrame(output)
         
         if filename != None:
-            df.to_csv(filename, index=False, header=False)
+            df.to_csv(filename, index=False)
         
         return df
 
-    def embedding(self, df, alphabet = None):
+    def encode(self, df, alphabet = None):
 
         if alphabet == None:
             alphabet = self.characters
         
-        def encode(x:str, target_length = self.length) -> list:
+        def embed(x:str, target_length = self.max_length, trailing = True) -> list:
             x = list(x)
             x = [alphabet.index(c) for c in x]
-            x = x + [0]*(target_length - len(x))
+            
+            padding = [0]*(target_length - len(x))
+            x = (x + padding) if trailing else (padding + x)
             return x
         
-        df.x = df.x.apply(encode)
-        df.y = df.y.apply(encode)
+        df.x = df.x.apply(embed, trailing = True)
+        df.y = df.y.apply(embed, trailing = False)
         return df
         
     def decode(self, embedding:list, alphabet = None) -> str:
@@ -54,30 +57,26 @@ class CharacterReversalDatagen:
         return x
 
 
-class ShakespeareDatagen:
+class ShakespeareData:
 
-    def __init__(self, tokenizer = r"\b", block_size = 50, sampling_rate = 1):
+    def __init__(self, tokenizer = r"\b", block_size = 100):
         self.URL = 'https://www.gutenberg.org/files/100/100-0.txt'
         self.tokenizer = tokenizer
         self.block_size = block_size
-        self.sampling_rate = sampling_rate
-        self.text = req.get(self.URL).text
-        self.dictionary = list(set(self.text.split(self.tokenizer)))
+        self.text = req.get(self.URL).text[3:]
+        self.dictionary = list(set(re.split(self.tokenizer, self.text)))
         self.vocab_size = len(self.dictionary)
     
     def gen(self, filename = None, trunc: int = None):
         
         text = self.text
-        if trunc is not None:
-            text = text[:trunc]
+        text = re.split(self.tokenizer, text)
 
-        text = text.split(self.tokenizer)
+        if trunc is not None:
+            text = text[:int(trunc)]
         text = [x for x in text if len(x) > 0]
         output = []
-        for i in range(len(text) - self.block_size):
-
-            if np.random.rand() > self.sampling_rate:
-                continue
+        for i in range( len(text) - self.block_size+2):
             
             x = text[i:i+self.block_size]
             y = text[i+1:i+self.block_size+1]
@@ -87,22 +86,29 @@ class ShakespeareDatagen:
         df = pd.DataFrame(output)
         
         if filename != None:
-            df.to_csv(filename, index=False, header=False)
+            df.to_json(filename)
         
         return df
 
-    def embedding(self, df, lexicon = None, token_length = 1):
+    def encode(self, df, lexicon = None, token_length = 1, filename = None):
 
         if lexicon == None:
             lexicon = self.dictionary
         
-        def encode(x:str) -> list:
+        def embed(x:str) -> list:
             x = list(x)
             x = [lexicon.index(c) for c in x]
             return x
         
-        df.x = df.x.apply(encode)
-        df.y = df.y.apply(encode)
+        tqdm.pandas(desc="Encoding data...")
+        N = len(df)
+        df.x = df.x.progress_apply(embed)
+        df.y[:N-1] = df.x[1:]
+        df.y[N-1] = embed(df.y[N-1])
+
+        if filename != None:  
+            df.to_json(filename)
+
         return df
     
     def decode(self, embedding:list, lexicon = None) -> str:
@@ -131,9 +137,9 @@ if __name__ == "__main__":
 
         # test character reversal
         print('Generating character reversal data...')
-        cr = CharacterReversalDatagen(10)
+        cr = CharacterReversalData(10)
         df = cr.gen()
-        embed_df = cr.embedding(df)
+        embed_df = cr.encode(df)
         print(embed_df.head())
         print(cr.decode(embed_df.x[0]))
 
@@ -142,11 +148,12 @@ if __name__ == "__main__":
 
         # test shakespeare
         print('Generating shakespeare data...')
-        sh = ShakespeareDatagen()
-        df = sh.gen(trunc = 1e4)
-        embed_df = sh.embedding(df)
+        sh = ShakespeareData()
+        df = sh.gen(trunc = 1e5)
+        embed_df = sh.encode(df, filename='./data/shakespeare_embed.json')
         print(embed_df.head())
-        print(sh.decode(embed_df[0]))
+        print(sh.decode(embed_df.x[0]))
+        print(sh.decode(embed_df.y[0]))
     
     else:
 

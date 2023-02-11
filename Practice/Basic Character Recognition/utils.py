@@ -29,8 +29,9 @@ class MNISTData:
         self.n_val = len(self.val_data)
         self.input_dim = self.train_data[0][0].size
 
-    def get_dataloader(self, train = True, batch_size = 32, shuffle = True):
+    def get_dataloader(self, train = True, batch_size = 32, shuffle = True, perc_use = 1.0):
         data = self.train_data if train else self.val_data
+        data = torch.utils.data.Subset(data, np.random.choice(len(data), int(len(data)*perc_use)))
         return DataLoader(data, batch_size = batch_size, shuffle = shuffle)
 
 
@@ -44,6 +45,7 @@ if __name__ == '__main__':
     # Get dataloader
     train_loader = data.get_dataloader(train = True, batch_size = 32, shuffle = True)
     val_loader = data.get_dataloader(train = False, batch_size = 32, shuffle = True)
+    breakpoint()
 
     # Show some images
     for i, (images, labels) in enumerate(train_loader):

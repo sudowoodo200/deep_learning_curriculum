@@ -7,3 +7,5 @@ matplotlib
 scikit-learn
 scipy
 numpy
+tensorboardX
+seaborn

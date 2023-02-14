@@ -8,8 +8,9 @@ from torch.autograd import Variable
 
 from sklearn.model_selection import train_test_split
 import numpy as np, pandas as pd
-import matplotlib.pyplot as plt
-import os, json, time, sys, argparse
+import matplotlib.pyplot as plt, seaborn as sns
+import os, json, time, sys, argparse, itertools
+from datetime import datetime as dt
 
 import tensorboard
 from tensorboardX import SummaryWriter
@@ -119,7 +120,8 @@ class ConvolutionModule(nn.Module):
 # Path: Practice/Basic Character Recognition/train.py
 ## Training script for character recognition using pytorch
 
-def train(model, optimizer, train_data, batch_size, learning_rate, log_dir, model_dir):
+# Training module
+def train(model, optimizer, train_data, batch_size, learning_rate, log_dir = None, model_dir = None):
     
     model.train()
     total_train_loss = 0
@@ -132,61 +134,91 @@ def train(model, optimizer, train_data, batch_size, learning_rate, log_dir, mode
     
     return total_train_loss / len(train_data)
 
-def test(model, test_data, log_dir, model_dir):
+# Testing module
+def test(model, test_data, log_dir = None, model_dir = None):
     
     model.eval()
     total_test_loss = 0
     for images, labels in test_data:
+
         logits, loss = model(images, labels)
         total_test_loss += loss.item()
     
     return total_test_loss / len(test_data)
-    
+
 
 if __name__ == '__main__':
 
     parser = argparse.ArgumentParser()
-    parser.add_argument('--log_dir', type=str, default='logs')
     parser.add_argument('--model_dir', type=str, default='models')
     parser.add_argument('--model_save', type=str, default= None)
+    parser.add_argument('--log_dir', type=str, default=f"logs/CNN/{dt.now().strftime('%Y%m%d-%H%M%S')}")
 
     args = parser.parse_args()
 
-    ## Model parameters
-    input_channel = 1
-    internal_channel = 16
-    output_channel = 10
-    conv_kernel_size = 4 ## variable
-    stride = 1
-    padding = 1
-    input_dim = 28
-    dropout = 0.2
+    internal_channels_range = range(10,60,25)
+    percentage_data_range = [float(x) /100 for x in range(25, 100, 25)]
+    base_learning_rate = 0.001
+    base_model_size = 49278 ## corresponds to 10-dim internal channel
 
-    ## initialize model
-    print("Initializing model...")
-    model = CNN(input_channel, internal_channel, output_channel, conv_kernel_size, stride, padding, input_dim, dropout)
-    model_size = sum(p.numel() for p in model.parameters() if p.requires_grad)
+    output_metrics = pd.DataFrame(columns = ["model_size", "data_size", "train_loss", "test_loss"])
 
-    ## Training parameters
-    n_epoch = 10
-    batch_size = 32
-    learning_rate = 0.001 ## TODO: use the Kaiming He initialization for learning rate
-    optimizer = torch.optim.Adam(model.parameters(), lr = learning_rate)
+    # itertools(internal_channels_range, percentage_data_range):
+    for hyperparam in itertools.product(internal_channels_range, percentage_data_range):
 
-    ## Load data
-    print("Loading data...")
-    data = MNISTData()
-    percent_used = 0.5
-    train_loader = data.get_dataloader(train = True, batch_size = batch_size, shuffle = True, perc_use=percent_used)
-    val_loader = data.get_dataloader(train = False, batch_size = batch_size, shuffle = True)
+        ## Model parameters
+        input_channel = 1
+        internal_channel = hyperparam[0] ## range (10, 50, 10)
+        output_channel = 10
+        conv_kernel_size = 4
+        stride = 1
+        padding = 1
+        input_dim = 28
+        dropout = 0.2
 
-    ## Training Model
-    print(f"Training with {model_size} parameters and {percent_used*100}% of the data")
-    for i in range(n_epoch):
+        ## initialize model
+        print("Initializing model...")
+        model = CNN(input_channel, internal_channel, output_channel, conv_kernel_size, stride, padding, input_dim, dropout)
+        model_size = sum(p.numel() for p in model.parameters() if p.requires_grad)
 
-        trg_loss = train(model, optimizer, train_loader, batch_size, learning_rate, args.log_dir, args.model_dir)
-        val_loss = test(model, val_loader, args.log_dir, args.model_dir)
-        print(f"Epoch {i+1}: Training loss: {trg_loss}, Validation loss: {val_loss}")
+        ## Training parameters
+        n_epoch = 1
+        batch_size = 32 
+        learning_rate = base_learning_rate * np.sqrt(base_model_size) / np.sqrt(model_size) ## Prop to 1/sqrt(model_size)
+        optimizer = torch.optim.Adam(model.parameters(), lr = learning_rate)
+
+        ## Load data
+        print("Loading data...")
+        data = MNISTData()
+        percent_used = hyperparam[1] ## parameter: range (0.2, 1, 0.2)
+        train_loader = data.get_dataloader(train = True, batch_size = batch_size, shuffle = True, perc_use=percent_used)
+        val_loader = data.get_dataloader(train = False, batch_size = batch_size, shuffle = True)
+
+        # Global Logging with Tensorboard
+        """ writer = SummaryWriter(args.log_dir) """
+
+        ## Training Model
+        print(f"Training with {model_size} parameters and {percent_used*100}% of the data")
+        for i in range(n_epoch):
+
+            trg_loss = train(model, optimizer, train_loader, batch_size, learning_rate, args.log_dir, args.model_dir)
+            val_loss = test(model, val_loader, args.log_dir, args.model_dir)
+            print(f"Epoch {i+1}: Training loss: {trg_loss}, Validation loss: {val_loss}")
+
+            # output metrics
+            output_metrics = output_metrics.append({"model_size": model_size, "data_size": len(train_loader), "train_loss": trg_loss, "test_loss": val_loss}, ignore_index=True)
+
+            """ writer.add_scalar(f"Loss/train with model_size = {model_size} and data_size = {len(train_loader)}", trg_loss, (i+1)*len(train_loader))
+            writer.add_scalar(f"Loss/val with model_size = {model_size} and data_size = {len(train_loader)}", val_loss, (i+1)*len(train_loader))
+            if i == 0:
+                writer.add_scalar(f"Loss/val v.s. model_size, with data_size = {len(train_loader)}", val_loss, model_size)
+                writer.add_scalar(f"Loss/val v.s. data_size with model_size = {model_size}", val_loss, len(train_loader))
+            writer.close() """
+
+    ## Save output metrics and plot heatmap
+    plot_df = output_metrics.pivot_table(index="model_size", columns="data_size", values="test_loss")
+    sns.heatmap(plot_df, annot=True, fmt=".3f")
+    output_metrics.to_csv(f"logs/output_metrics.csv", index=False)
 
 
     ## Save Model

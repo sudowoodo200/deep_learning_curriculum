@@ -4,7 +4,7 @@ It's helpful to have an intuition for how SGD and its variants optimize models, 
 
 ## Recommended reading
 
-- [An Empirical Model of Large-Batch Training](https://arxiv.org/abs/1812.06162) - Studies the *critical batch size*, above which training becomes less-data efficient. Section 2 explains the theoretical picture well.
+- [An Empirical Model of Large-Batch Training](https://arxiv.org/abs/1812.06162) - Studies the *critical batch size*, above which training becomes less-data efficient. Section 2 explains the theoretical picture well. <span style="color:yellow"> How does this interact with the Kaiming He initialization of the learning rate though? </span>
 
 ## Optional reading
 

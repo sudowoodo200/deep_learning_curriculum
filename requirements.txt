@@ -9,3 +9,5 @@ scipy
 numpy
 tensorboardX
 seaborn
+pydantic
+typing

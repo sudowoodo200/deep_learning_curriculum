@@ -24,3 +24,5 @@ Write an implementation of [Adam](https://arxiv.org/abs/1412.6980) using Triton,
 - Benchmark your implementation and compare it to `torch.optim.Adam`.
 
 <span style="color:yellow">Triton is not working due to an unresolved issue... sigh... Did this in Pytorch, but couldn't run the experiment in the end </span>
+
+<span style="color:yellow">This section borrows a lot of conceptual ideas from CPU pipelining, which is expected </span>

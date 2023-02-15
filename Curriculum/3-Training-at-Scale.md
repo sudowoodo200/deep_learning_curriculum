@@ -22,3 +22,5 @@ Write an implementation of [Adam](https://arxiv.org/abs/1412.6980) using Triton,
 - First write the code for the update rule that can be compiled using `@triton.jit` decorator.
 - Then write the PyTorch function that calls the compiled update rule.
 - Benchmark your implementation and compare it to `torch.optim.Adam`.
+
+<span style="color:yellow">Triton is not working due to an unresolved issue... sigh... Did this in Pytorch, but couldn't run the experiment in the end </span>

@@ -45,8 +45,17 @@ class DummyOptimizer:
 
 class DummySGD(DummyOptimizer):
 
+    def __init__(self, model: DummyModel, batch_size: int, max_steps: int = 1000):
+
+        super().__init__(model, batch_size, max_steps)
+
+
     raise NotImplementedError
 
 class DummyAdam(DummyOptimizer):
+
+    def __init__(self, model: DummyModel, batch_size: int, max_steps: int = 1000):
+
+        super().__init__(model, batch_size, max_steps)
 
     raise NotImplementedError

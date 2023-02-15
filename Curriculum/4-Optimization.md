@@ -4,7 +4,7 @@ It's helpful to have an intuition for how SGD and its variants optimize models, 
 
 ## Recommended reading
 
-- [An Empirical Model of Large-Batch Training](https://arxiv.org/abs/1812.06162) - Studies the *critical batch size*, above which training becomes less-data efficient. Section 2 explains the theoretical picture well. <span style="color:yellow"> How does this interact with the Kaiming He initialization of the learning rate though? </span>
+- [An Empirical Model of Large-Batch Training](https://arxiv.org/abs/1812.06162) - Studies the *critical batch size*, above which training becomes less-data efficient. Section 2 explains the theoretical picture well. <span style="color:yellow"> How does this interact with the Kaiming He initialization of the learning rate? </span>
 
 ## Optional reading
 
@@ -22,5 +22,7 @@ Run your own set of noisy quadratic model experiments.
 
 - Set up a testbed using the setup from the NQM paper, where the covariance matrix of the gradient and the Hessian are both diagonal. You can use the same defaults for these matrices as in the paper, i.e., diagonal entries of 1, 1/2, 1/3, ... for both (in the paper they go up to 10^4, you can reduce this to 10^3 if experiments are taking too long to run). Implement both SGD with momentum and Adam.
 - Create a method for optimizing learning rate schedules. You can either use dynamic programming using equation (3) as in the paper (see footnote on page 7), or a simpler empirical method such as black-box optimization (perhaps with simpler schedule).
-- Check that at very small batch sizes, the optimal learning rate scales with batch size as expected: proportional to the batch size for SGD, proportional to the square root of the batch size for Adam.
+- Check that at very small batch sizes, the optimal learning rate scales with batch size as expected: proportional to the batch size for SGD, proportional to the square root of the batch size for Adam. <span style="color:yellow">To chat about this </span>
 - Look at the relationship between the batch size and the number of steps to reach a target loss. Study the effects of momentum and using Adam on this relationship.
+
+<span style="color:yellow">This entire section hinges on 3 critical ideas: (1) batch size increases the statistical power of each gradient estiamte, but has diminishing returns at a point; (2) the required level of certainty depends on the inherent noise level, determined both by the curvature of the loss surface and the amount of underlying stochasticity; (3) the step size / learning rate should be accordingly adjusted depending on the level of certainty accorded by the quality of each gradient estimate</span>

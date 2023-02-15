@@ -25,3 +25,5 @@ Perform your own study of scaling laws for MNIST.
 - How does validation accuracy behave?
 - Study how the compute-efficient model size varies with compute. This should also follow an approximate power law. Try to estimate its exponent.
 - Repeat your entire experiment with 20% dropout to see how this affects the scaling exponents.
+
+<span style="color:yellow">Increase data + increase model size with sqrt-proportionate inverse adjustment to learning rate = good results. Shape doesn't matter.</span>

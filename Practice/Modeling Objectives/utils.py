@@ -34,6 +34,30 @@ class MNISTData:
         data = torch.utils.data.Subset(data, np.random.choice(len(data), int(len(data)*perc_use)))
         return DataLoader(data, batch_size = batch_size, shuffle = shuffle)
 
+def contrastive_loss_fn(y_pred, y_true, epsilon = 1.0, reduction = "sum"):
+    
+    # breakpoint()
+
+    N = len(y_true)
+    y_true = y_true.float() ## (N, C)
+    y_pred = y_pred.float() ## (N)
+
+    y_diff = torch.stack( [torch.roll(y_pred, shifts=i, dims=0) - y_pred for i in range(N)] , dim = 0) ## (N, N, C)
+    y_l2_diff = (torch.abs(y_diff)**2).sum(dim = -1)  ## (N, N)
+    y_inverse_l2_diff = torch.clamp(epsilon - y_l2_diff, min = 0.0)**2 ## (N, N)
+    mask = (y_true.unsqueeze(0) == y_true.unsqueeze(1)).type(torch.int64) ## (N, N)
+
+    loss = (mask * y_l2_diff + (1 - mask) * y_inverse_l2_diff).sum(dim=1).sum(dim=0).float() / 2 ## (N, N)
+
+    if reduction == "sum":
+        pass
+    elif reduction == "mean":
+        loss = loss / N
+    else:
+        raise NotImplementedError
+    
+    return loss
+
 
 ############ Main ############
 

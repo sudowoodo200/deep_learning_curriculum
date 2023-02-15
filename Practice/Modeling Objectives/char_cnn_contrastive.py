@@ -44,7 +44,7 @@ class CNN(nn.Module):
         self.ff_2 = nn.Linear(128, output_channel)
 
         self.logits = nn.LogSoftmax(dim = -1)
-        self.loss_fn = F.cross_entropy
+        self.loss_fn = contrastive_loss_fn
 
         self._initialize_weights(mean = 0, std = 0.05)
     
@@ -132,7 +132,7 @@ def train(model, optimizer, train_data, batch_size, learning_rate, log_dir = Non
         optimizer.step()
         total_train_loss += loss.item()
     
-    return total_train_loss / len(train_data)
+    return total_train_loss / (len(train_data)**2)
 
 # Testing module
 def test(model, test_data, log_dir = None, model_dir = None):
@@ -144,7 +144,7 @@ def test(model, test_data, log_dir = None, model_dir = None):
         logits, loss = model(images, labels)
         total_test_loss += loss.item()
     
-    return total_test_loss / len(test_data)
+    return total_test_loss / (len(test_data)**2)
 
 
 if __name__ == '__main__':
@@ -156,10 +156,10 @@ if __name__ == '__main__':
 
     args = parser.parse_args()
 
-    internal_channels_range = range(10,60,25)
-    percentage_data_range = [float(x) /100 for x in range(25, 100, 25)]
+    internal_channels_range = [16]
+    percentage_data_range = [0.5]
     base_learning_rate = 0.001
-    base_model_size = 49278 ## corresponds to 10-dim internal channel
+    # base_model_size = 49278 
 
     output_metrics = pd.DataFrame(columns = ["model_size", "data_size", "train_loss", "test_loss"])
 
@@ -182,9 +182,9 @@ if __name__ == '__main__':
         model_size = sum(p.numel() for p in model.parameters() if p.requires_grad)
 
         ## Training parameters
-        n_epoch = 1
+        n_epoch = 20
         batch_size = 32 
-        learning_rate = base_learning_rate * np.sqrt(base_model_size) / np.sqrt(model_size) ## Prop to 1/sqrt(model_size)
+        learning_rate = base_learning_rate # * np.sqrt(base_model_size) / np.sqrt(model_size) ## Prop to 1/sqrt(model_size)
         optimizer = torch.optim.Adam(model.parameters(), lr = learning_rate)
 
         ## Load data
@@ -206,7 +206,7 @@ if __name__ == '__main__':
             print(f"Epoch {i+1}: Training loss: {trg_loss}, Validation loss: {val_loss}")
 
             # output metrics
-            output_metrics = output_metrics.append({"model_size": model_size, "data_size": len(train_loader), "train_loss": trg_loss, "test_loss": val_loss}, ignore_index=True)
+            # output_metrics = output_metrics.append({"model_size": model_size, "data_size": len(train_loader), "train_loss": trg_loss, "test_loss": val_loss}, ignore_index=True)
 
             """ writer.add_scalar(f"Loss/train with model_size = {model_size} and data_size = {len(train_loader)}", trg_loss, (i+1)*len(train_loader))
             writer.add_scalar(f"Loss/val with model_size = {model_size} and data_size = {len(train_loader)}", val_loss, (i+1)*len(train_loader))
@@ -215,7 +215,7 @@ if __name__ == '__main__':
                 writer.add_scalar(f"Loss/val v.s. data_size with model_size = {model_size}", val_loss, len(train_loader))
             writer.close() """
 
-    ## Save output metrics and plot heatmap
+    """ ## Save output metrics and plot heatmap
     plot_df = output_metrics.pivot_table(index="model_size", columns="data_size", values="test_loss")
     sns.heatmap(plot_df, annot=True, fmt=".3f")
     output_metrics.to_csv(f"logs/output_metrics.csv", index=False)
@@ -224,5 +224,5 @@ if __name__ == '__main__':
     ## Save Model
     if args.model_save is not None:
         print(f"Saving model to {args.model_save}...")
-        torch.save(model.state_dict(), args.model_save)
+        torch.save(model.state_dict(), args.model_save) """
 

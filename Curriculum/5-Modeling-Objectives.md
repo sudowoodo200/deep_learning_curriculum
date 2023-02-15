@@ -19,3 +19,5 @@ This chapter is included for breadth, but it can be skipped if you want to focus
 ## Suggested exercise
 
 Train a contrastive CNN on MNIST using a contrastive objective of your choice. Hold out a few examples from each class from the training set. Once your model has finished training, use your held-out examples to measure the classification accuracy of your model: for each test example, measure the similarity of the test example to each held-out example, and choose the class with the highest average similarity.
+
+<span style="color:yellow"> This is so brutal to train and I'm not exactly sure why. Doing pairwise contrastive loss per batch. </span>

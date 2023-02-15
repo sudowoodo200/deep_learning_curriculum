@@ -59,3 +59,4 @@ class DummyAdam(DummyOptimizer):
         super().__init__(model, batch_size, max_steps)
 
     raise NotImplementedError
+

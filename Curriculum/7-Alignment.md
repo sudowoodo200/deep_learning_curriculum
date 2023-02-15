@@ -30,3 +30,16 @@ Read the first 49 pages of the ELK report (up until "Why we're excited about tac
     - Compress the predictor's state so it can't tell what a human would believe
 - Your proposal will almost certainly have a counterexample of its own. Make your proposal precise enough that you can give a fairly specific counterexample.
 - Once you're finished, compare your proposal with the ones given in [this post](https://www.alignmentforum.org/posts/zjMKpSB2Xccn9qi5t/elk-prize-results).
+
+
+<span style="color:yellow">
+    <br />
+    <br />
+    <h2> Training Strategy : Prisoner's Dilemma for Truth</h2>
+        Constraints (eg. heart rate responses, set of prior information) and imperfect information (eg. prisoners dilemmas) are generally required to probe for truth. Train N AI agents, each with their own ELK strategies . Run them separately without allowing any communication between them. Penalize the minority; assume that they've reported incorrect information designed to simulate human response. Given a large enough population of models, it should be easiest to represent the true state.
+    <br />
+    <br />
+    <h2> Counterexamples </h2>
+        <p>Each model may choose a different way to be adversarial.</p>
+        <p> Majority attacks </p>
+</span>

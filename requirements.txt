@@ -12,3 +12,4 @@ seaborn
 pydantic
 typing
 captum
+transformers==4.22.1

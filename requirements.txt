@@ -13,3 +13,5 @@ pydantic
 typing
 captum
 transformers==4.22.1
+gymnasium
+procgen

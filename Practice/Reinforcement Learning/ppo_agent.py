@@ -60,7 +60,7 @@ class PPOAgent(nn.Module):
     
     def get_action(self, state: Type[torch.Tensor], action: Type[torch.Tensor] = None, **kwargs):
 
-        logits = F.softmax(self.policy(state))
+        logits = F.softmax(self.policy(state), dim=-1)
         dist = Categorical(logits=logits)
         action = dist.sample() if action is None else action
         logprob = dist.log_prob(action)
@@ -89,7 +89,7 @@ class PPOAgent(nn.Module):
         returns = advantages + values
 
         ## Parameters
-        N = rollout_storage.n_steps * rollout_storage.num_envs * rollout_storage.num_envs
+        N = rollout_storage.n_steps * rollout_storage.num_envs
         batch_size = N // n_batch
         idx = np.arange(N)
 
@@ -128,9 +128,9 @@ class PPOAgent(nn.Module):
                 policy_loss = -torch.min(surr1, surr2).mean()
 
                 ## Get the clipped value loss
-                value_loss_unclipped = F.mse_loss(batch_values, batch_returns, reduction = "sum")
+                value_loss_unclipped = (batch_values - batch_returns)**2
                 value_loss_clipped = batch_values + torch.clamp(new_value - batch_values, value_loss_clip, value_loss_clip)
-                value_loss_clipped = F.mse_loss(value_loss_clipped, batch_returns, reduction = "sum")
+                value_loss_clipped = (value_loss_clipped - batch_returns)**2
                 value_loss = 0.5 * torch.max(value_loss_unclipped, value_loss_clipped).mean()
 
                 ## Get the entropy loss

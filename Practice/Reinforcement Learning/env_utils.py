@@ -134,7 +134,7 @@ class EnvController:
 
         def thunk():
 
-            env = gym.make(gym_id)
+            env = gym.make(gym_id, render_mode='rgb_array')
             env = gym.wrappers.RecordEpisodeStatistics(env)
             if video_debug & (recorded_idx == 0):
                 env = gym.wrappers.RecordVideo(env, f"logging_videos/{gym_id}/{run_name}")
@@ -152,6 +152,10 @@ class EnvController:
 
         raise NotImplementedError
 
+    ## Close
+    def close(self):
+        
+        self.envs.close()
 
 
 #################################################### Main, for testing ####################################################

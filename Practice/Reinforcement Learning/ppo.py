@@ -9,6 +9,7 @@ import numpy as np, pandas as pd, os, sys, argparse
 from datetime import datetime as dt
 import matplotlib.pyplot as plt, seaborn as sns
 from typing import Type, List
+from distutils.util import strtobool
 
 ## Import tensorboard
 from torch.utils.tensorboard import SummaryWriter
@@ -49,21 +50,21 @@ class PPO:
 
             ## Update agent
             training_loss = self.agent.update(self.envs.rollout_storage, **self.training_param)
-            print(f"Training Loss: {training_loss}")
+            # print(f"Training Loss: {training_loss}")
 
         return self.agent.get_action, self.agent.get_value, training_loss
 
 
-############# Main #############
+#################################################### Main ####################################################
 if __name__ == "__main__":
 
     ## Argument Parser
     parser = argparse.ArgumentParser()
     parser.add_argument("--env", type=str, default="CartPole-v1", help="Environment name")
-    parser.add_argument("--num_envs", type=int, default=1, help="Number of environments to run in parallel")
-    parser.add_argument("--n_steps", type=int, default=100, help="Number of steps to run in each environment per iteration")
+    parser.add_argument("--num_envs", type=int, default=4, help="Number of environments to run in parallel")
+    parser.add_argument("--n_steps", type=int, default=200, help="Number of steps to run in each environment per iteration")
     parser.add_argument("--seed", type=int, default=1, help="Random seed")
-    parser.add_argument("--video_debug", type=bool, default=False, help="Whether to record videos of the environment")
+    parser.add_argument("--video_debug", type=lambda x: bool(strtobool(x)), default=False, nargs="?", const=True, help="Whether to record videos of the environment")
     parser.add_argument("--run_name", type=str, default="test", help="Name of the run")
     parser.add_argument("--log_dir", type=str, default="logs", help="Directory to save logs")
     args = parser.parse_args()
@@ -80,7 +81,10 @@ if __name__ == "__main__":
     ppo = PPO(envs, agent)
 
     ## Train
-    ppo.train(n_iter = 100)
+    ppo.train(n_iter = int(1e4))
+
+    ## Close Environments
+    envs.close()
 
     ## Render a test environment with agent
-    envs.render_play(ppo.agent.get_action)
+    ## envs.render_play(ppo.agent.get_action)

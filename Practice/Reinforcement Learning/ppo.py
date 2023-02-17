@@ -51,7 +51,7 @@ class PPO:
             training_loss = self.agent.update(self.envs.rollout_storage, **self.training_param)
             print(f"Training Loss: {training_loss}")
 
-        return self.agent.get_action, self.envs.get_value, training_loss
+        return self.agent.get_action, self.agent.get_value, training_loss
 
 
 ############# Main #############

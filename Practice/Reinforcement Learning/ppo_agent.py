@@ -128,7 +128,7 @@ class PPOAgent(nn.Module):
                 policy_loss = -torch.min(surr1, surr2).mean()
 
                 ## Get the clipped value loss
-                value_loss_unclipped = (batch_values - batch_returns)**2
+                value_loss_unclipped = (new_value - batch_returns)**2
                 value_loss_clipped = batch_values + torch.clamp(new_value - batch_values, value_loss_clip, value_loss_clip)
                 value_loss_clipped = (value_loss_clipped - batch_returns)**2
                 value_loss = 0.5 * torch.max(value_loss_unclipped, value_loss_clipped).mean()

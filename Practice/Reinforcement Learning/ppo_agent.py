@@ -80,12 +80,12 @@ class PPOAgent(nn.Module):
         ## Update optimizer parameters
         self.optimizer.param_groups[0]["lr"] = lr
 
-        ## Get and flatten the rollout data
-        state = rollout_storage.state.reshape((-1,) + self.state_space_shape)
-        action = rollout_storage.action.reshape((-1,) + self.action_space_shape)
-        logprob = rollout_storage.logprob.reshape(-1)
-        advantages = rollout_storage.advantages.reshape(-1)
-        values = rollout_storage.value.reshape(-1)
+        ## Get and flatten the rollout data across all environment instances
+        state = rollout_storage.state.reshape((-1,) + self.state_space_shape)       # (n_steps * num_envs, state_dim)
+        action = rollout_storage.action.reshape((-1,) + self.action_space_shape)    # (n_steps * num_envs, action_dim)
+        logprob = rollout_storage.logprob.reshape(-1)                               # (n_steps * num_envs)
+        advantages = rollout_storage.advantages.reshape(-1)                         # (n_steps * num_envs)
+        values = rollout_storage.value.reshape(-1)                                  # (n_steps * num_envs)
         returns = advantages + values
 
         ## Parameters
@@ -94,7 +94,7 @@ class PPOAgent(nn.Module):
         idx = np.arange(N)
 
         ## Logging
-        mean_loss = {"policy": 0, "value": 0, "entropy": 0}
+        mean_loss = {"policy": 0, "value": 0, "entropy": 0, "total_loss": 0}
 
         # Optimizing the policy and value network
         for i in range(n_epochs):
@@ -109,12 +109,12 @@ class PPOAgent(nn.Module):
                 batch_idx = idx[j * batch_size : (j + 1) * batch_size]
 
                 ## Get the batch data
-                batch_state = state[batch_idx]
-                batch_action = action[batch_idx]
-                batch_logprob = logprob[batch_idx]
-                batch_advantages = advantages[batch_idx]
-                batch_values = values[batch_idx]
-                batch_returns = returns[batch_idx]
+                batch_state = state[batch_idx]                                      # (batch_size, state_dim)
+                batch_action = action[batch_idx]                                    # (batch_size, action_dim)  
+                batch_logprob = logprob[batch_idx]                                  # (batch_size)
+                batch_advantages = advantages[batch_idx]                            # (batch_size)
+                batch_values = values[batch_idx]                                    # (batch_size)
+                batch_returns = returns[batch_idx]                                  # (batch_size)
 
                 ## Get the policy loss
                 _, new_logprob, entropy, new_value = self.forward(batch_state, batch_action)
@@ -139,9 +139,12 @@ class PPOAgent(nn.Module):
                 ## Get the total loss
                 ## TODO: Study this part. Feels like arbitrary coefficients
                 loss = policy_loss_coef * policy_loss + value_loss_coef * value_loss - entropy_loss_coef * entropy_loss
-                mean_loss["policy"] += policy_loss.item() / n_epochs
-                mean_loss["value"] += value_loss.item() / n_epochs
-                mean_loss["entropy"] += entropy_loss.item() / n_epochs
+                
+                ## Logging
+                mean_loss["policy"] += policy_loss.item() / n_epochs                # Scalar
+                mean_loss["value"] += value_loss.item() / n_epochs                  # Scalar
+                mean_loss["entropy"] += entropy_loss.item() / n_epochs              # Scalar
+                mean_loss["total_loss"] += loss.item() / n_epochs                   # Scalar
 
                 ## Take a gradient step
                 self.optimizer.zero_grad()

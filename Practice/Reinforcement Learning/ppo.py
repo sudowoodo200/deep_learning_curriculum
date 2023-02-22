@@ -33,7 +33,7 @@ class PPO:
                                 "value_loss_coef": value_loss_coef, "entropy_loss_coef": entropy_loss_coef, "grad_norm_clip": grad_norm_clip}
         self.device = device
 
-    def train(self, n_iter = 100, **kwargs):
+    def train(self, n_iter = 100, writer = None, **kwargs):
 
         ## Training Loop
         for i in range(n_iter):
@@ -50,7 +50,24 @@ class PPO:
 
             ## Update agent
             training_loss = self.agent.update(self.envs.rollout_storage, **self.training_param)
-            # print(f"Training Loss: {training_loss}")
+            
+            ## Logging
+            if writer is not None:
+                writer.add_scalar("Loss/Policy", training_loss["policy_loss"], i)
+                writer.add_scalar("Loss/Value", training_loss["value_loss"], i)
+                writer.add_scalar("Loss/Entropy", training_loss["entropy_loss"], i)
+                writer.add_scalar("Loss/Total", training_loss["total_loss"], i)
+                writer.add_scalar("Learning Rate", self.training_param["lr"], i)
+                """ writer.add_scalar("Reward", self.envs.get_mean_reward(), i)
+                writer.add_scalar("Advantage", self.envs.get_mean_adv(), i)
+                writer.add_scalar("Value", self.envs.get_mean_value(), i)
+                writer.add_scalar("Entropy", self.envs.get_mean_entropy(), i)
+                writer.add_scalar("Ratio", self.envs.get_mean_ratio(), i)
+                writer.add_scalar("Clip Ratio", self.envs.get_mean_clip_ratio(), i)
+                writer.add_scalar("Value Loss", self.envs.get_mean_value_loss(), i)
+                writer.add_scalar("Clip Value Loss", self.envs.get_mean_clip_value_loss(), i)
+                writer.add_scalar("Grad Norm", self.envs.get_mean_grad_norm(), i)
+                writer.add_scalar("Grad Norm Clip", self.envs.get_mean_grad_norm_clip(), i) """
 
         return self.agent.get_action, self.agent.get_value, training_loss
 
@@ -78,7 +95,7 @@ if __name__ == "__main__":
     ## Initialize the vector environment & agent, wrap in PPO
     envs = utl.EnvController(args.env, args.n_steps, args.num_envs, args.seed, args.video_debug)
     agent = agt.PPOAgent(envs)
-    ppo = PPO(envs, agent)
+    ppo = PPO(envs, agent, writer=writer)
 
     ## Train
     ppo.train(n_iter = int(1e4))
